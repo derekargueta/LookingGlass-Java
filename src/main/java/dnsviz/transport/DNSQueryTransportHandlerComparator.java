@@ -19,7 +19,7 @@
  * with DNSViz.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.dnsviz.transport;
+package dnsviz.transport;
 
 import java.util.Comparator;
 

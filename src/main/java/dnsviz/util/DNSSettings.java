@@ -19,7 +19,7 @@
  * with DNSViz.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.dnsviz.util;
+package dnsviz.util;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

@@ -19,7 +19,7 @@
  * with DNSViz.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.dnsviz.transport;
+package dnsviz.transport;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -42,8 +42,8 @@ import java.util.Random;
 
 import java.net.UnknownHostException;
 
-import net.dnsviz.util.Base64Encoder;
-import net.dnsviz.util.Base64Decoder;
+import dnsviz.util.Base64Encoder;
+import dnsviz.util.Base64Decoder;
 
 public abstract class DNSQueryTransportHandler {
 	private final static int MAX_PORT_BIND_ATTEMPTS = 10;

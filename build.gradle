@@ -14,3 +14,10 @@ dependencies {
     compile group: 'org.json', name: 'json', version: '1.5-20090211'
 }
 
+run {
+  if (project.hasProperty("myargs") ) {
+    args(myargs.split(' '))
+  }
+}
+
+// '-Pmyargs=::1 8080 /lg/?fn=12345 http://localhost/'

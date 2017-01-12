@@ -19,7 +19,7 @@
  * with DNSViz.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.dnsviz.websocket;
+package dnsviz.websocket;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -33,7 +33,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
 
-import net.dnsviz.util.Base64Encoder;
+import dnsviz.util.Base64Encoder;
 
 public class WebSocketClient {
 	final static protected String WEBSOCKET_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";

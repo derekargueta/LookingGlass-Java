@@ -19,7 +19,7 @@
  * with DNSViz.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.dnsviz.lookingglass;
+package dnsviz.lookingglass;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -31,13 +31,13 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
 
-import net.dnsviz.transport.DNSQueryTransportHandler;
-import net.dnsviz.transport.DNSQueryTransportHandlerTCP;
-import net.dnsviz.transport.DNSQueryTransportHandlerUDP;
-import net.dnsviz.transport.DNSQueryTransportManager;
-import net.dnsviz.util.Base64Decoder;
-import net.dnsviz.util.Base64Encoder;
-import net.dnsviz.websocket.WebSocketClient;
+import dnsviz.transport.DNSQueryTransportHandler;
+import dnsviz.transport.DNSQueryTransportHandlerTCP;
+import dnsviz.transport.DNSQueryTransportHandlerUDP;
+import dnsviz.transport.DNSQueryTransportManager;
+import dnsviz.util.Base64Decoder;
+import dnsviz.util.Base64Encoder;
+import dnsviz.websocket.WebSocketClient;
 
 public class DNSLookingGlass {
 	public DNSLookingGlass() {
@@ -75,7 +75,7 @@ public class DNSLookingGlass {
 		return ret;
 	}
 
-	protected JSONObject getEncodedResponses(DNSQueryTransportHandler [] qths) {
+	protected JSONObject getEncodedResponses(DNSQueryTransportHandler [] qths) throws JSONException {
 		JSONObject ret;
 		JSONObject response;
 
@@ -151,8 +151,12 @@ public class DNSLookingGlass {
 			return getEncodedResponses(qths).toString();
 		} catch (Exception ex) {
 			ret = new JSONObject();
-			ret.put("version", "1.0");
-			ret.put("error", getErrorTrace(ex));
+			try {
+				ret.put("version", "1.0");
+				ret.put("error", getErrorTrace(ex));
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
 			return ret.toString();
 		}
 	}

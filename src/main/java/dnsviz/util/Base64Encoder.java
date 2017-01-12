@@ -19,9 +19,9 @@
  * with DNSViz.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.dnsviz.util;
+package dnsviz.util;
 
-import net.dnsviz.util.Base64;
+import dnsviz.util.Base64;
 
 public class Base64Encoder {
 	public byte [] encode(byte [] msg) {

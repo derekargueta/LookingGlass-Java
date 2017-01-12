@@ -19,7 +19,7 @@
  * with DNSViz.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.dnsviz.applet;
+package dnsviz.applet;
 
 import java.applet.Applet;
 import java.io.IOException;
@@ -28,10 +28,10 @@ import java.io.StringWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import net.dnsviz.transport.DNSQueryTransportHandler;
-import net.dnsviz.util.DNSSettings;
+import dnsviz.transport.DNSQueryTransportHandler;
+import dnsviz.util.DNSSettings;
 
-import net.dnsviz.lookingglass.DNSLookingGlass;
+import dnsviz.lookingglass.DNSLookingGlass;
 
 public class DNSLookingGlassApplet extends Applet {
 	static final long serialVersionUID = 0;
