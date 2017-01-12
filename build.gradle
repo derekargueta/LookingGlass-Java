@@ -1,0 +1,16 @@
+
+apply plugin: 'java'
+apply plugin: 'application'
+
+mainClassName = "dnsviz.lookingglass.DNSLookingGlass"
+
+repositories {
+    maven {
+        url "http://maven.jahia.org/maven2/"
+    }
+}
+
+dependencies {
+    compile group: 'org.json', name: 'json', version: '1.5-20090211'
+}
+
