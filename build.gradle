@@ -2,6 +2,10 @@
 apply plugin: 'java'
 apply plugin: 'application'
 
+version = '1.0'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
 mainClassName = "dnsviz.lookingglass.DNSLookingGlass"
 
 repositories {
@@ -15,9 +19,23 @@ dependencies {
 }
 
 run {
+  // parse command-line arguments in the from of `-P{listargumentshere}`
+  // See bottom of build script for an example
   if (project.hasProperty("myargs") ) {
     args(myargs.split(' '))
   }
+}
+
+//create a single Jar with all dependencies
+task fatJar(type: Jar) {
+  manifest {
+        attributes 'Implementation-Title': 'DNSViz LookingGlass Jar',
+          'Implementation-Version': version,
+          'Main-Class': 'dnsviz.lookingglass.DNSLookingGlass'
+    }
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
 }
 
 // '-Pmyargs=::1 8080 /lg/?fn=12345 http://localhost/'

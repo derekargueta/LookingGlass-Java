@@ -15,10 +15,22 @@ queries from its perspective.
 gradle run '-Pmyargs=::1 8080 /lg/?fn=12345 http://localhost/'
 ```
 
+Or compiling a jar and executing it on the commandline:
+
+```bash
+make
+```
+
 Command line arguments
-- host
-- port
-- path for the socket file
-- origin
+- HOST
+- PORT
+- SOCK_PATH
+- ORIGIN
+
+Any of these can be overridde in the `Makefile` using `-e` like so:
+
+```bash
+make -e PORT=5000
+```
 
 
