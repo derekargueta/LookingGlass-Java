@@ -182,11 +182,11 @@ public abstract class DNSQueryTransportHandler {
 				this.port = port;
 			}
 		}
-		bindAction a = new bindAction();
+		bindAction action = new bindAction();
 		if (sport > 0) {
-			a.setPort(sport);
+			action.setPort(sport);
 			try {
-				AccessController.doPrivileged(a);
+				AccessController.doPrivileged(action);
 			} catch (PrivilegedActionException pae) {
 				Exception ex = pae.getException();
 				if (ex instanceof IOException) {
@@ -196,14 +196,14 @@ public abstract class DNSQueryTransportHandler {
 				}
 			}
 		} else {
-			Random r = new Random();
+			Random random = new Random();
 
 			int i = 0;
 			while (true) {
 				// 65536 - 1024 = 64512
-				a.setPort(r.nextInt(64512) + 1024);
+				action.setPort(random.nextInt(64512) + 1024);
 				try {
-					AccessController.doPrivileged(a);
+					AccessController.doPrivileged(action);
 					break;
 				} catch (PrivilegedActionException pae) {
 					Exception ex = pae.getException();
@@ -243,9 +243,9 @@ public abstract class DNSQueryTransportHandler {
 				return (InetSocketAddress)channel.getLocalAddress();
 			}
 		}
-		getAddrAction a = new getAddrAction();
+		getAddrAction action = new getAddrAction();
 		try {
-			addr = AccessController.doPrivileged(a);
+			addr = AccessController.doPrivileged(action);
 		} catch (PrivilegedActionException pae) {
 			Exception ex = pae.getException();
 			if (ex instanceof IOException) {
@@ -259,9 +259,9 @@ public abstract class DNSQueryTransportHandler {
 	}
 
 	protected void setStart() {
-		Date d = new Date();
-		expiration = d.getTime() + timeout;
-		startTime = d.getTime();
+		Date date = new Date();
+		expiration = date.getTime() + timeout;
+		startTime = date.getTime();
 	}
 
 	protected abstract void connect() throws IOException;
@@ -275,9 +275,9 @@ public abstract class DNSQueryTransportHandler {
 				return null;
 			}
 		}
-		writeAction a = new writeAction();
+		writeAction action = new writeAction();
 		try {
-			AccessController.doPrivileged(a);
+			AccessController.doPrivileged(action);
 		} catch (PrivilegedActionException pae) {
 			Exception ex = pae.getException();
 			if (ex instanceof IOException) {

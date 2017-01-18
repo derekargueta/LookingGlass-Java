@@ -39,37 +39,27 @@ import dnsviz.util.Base64Decoder;
 import dnsviz.util.Base64Encoder;
 import dnsviz.websocket.WebSocketClient;
 
+import static dnsviz.lookingglass.Constants.*;
+
 public class DNSLookingGlass {
 	public DNSLookingGlass() {
 	}
 
 	protected DNSQueryTransportHandler [] getDNSQueryTransportHandlers(JSONObject obj) throws JSONException, UnknownHostException {
 		DNSQueryTransportHandler [] ret;
-		JSONArray requests;
-		String [] vers;
-		String src;
-		int sport;
 		JSONObject reqObj;
 
-		vers = Double.toString(obj.getDouble("version")).split("\\.");
-		if (Integer.parseInt(vers[0]) != 1 || Integer.parseInt(vers[1]) > 0) {
+		Version version = new Version(obj.getDouble("version"));
+		if (!version.isValid()) {
 			throw new JSONException("Version of JSON input is invalid");
 		}
 
-		requests = obj.getJSONArray("requests");
+		JSONArray requests = obj.getJSONArray("requests");
 		ret = new DNSQueryTransportHandler [requests.length()];
 		for (int i = 0; i < requests.length(); i++) {
 			reqObj = requests.getJSONObject(i);
-			if (reqObj.has("src")) {
-				src = reqObj.getString("src");
-			} else {
-				src = null;
-			}
-			if (reqObj.has("sport")) {
-				sport = reqObj.getInt("sport");
-			} else {
-				sport = 0;
-			}
+			String src = reqObj.has("src") ? reqObj.getString("src") : null;
+			int sport = reqObj.has("sport") ? reqObj.getInt("sport") : 0;
 			ret[i] = getDNSQueryTransportHandler(reqObj.getString("req"), reqObj.getString("dst"), reqObj.getInt("dport"), src, sport, reqObj.getLong("timeout"), reqObj.getBoolean("tcp"));
 		}
 		return ret;
@@ -77,11 +67,10 @@ public class DNSLookingGlass {
 
 	protected JSONObject getEncodedResponses(DNSQueryTransportHandler [] qths) throws JSONException {
 		JSONObject ret;
-		JSONObject response;
 
 		JSONArray responses = new JSONArray();
 		for (int i = 0; i < qths.length; i++) {
-			response = new JSONObject();
+			JSONObject response = new JSONObject();
 			response.put("res", qths[i].getEncodedResponse());
 			if (qths[i].getError() != null) {
 				response.put("err", qths[i].getError());
@@ -104,7 +93,7 @@ public class DNSLookingGlass {
 		}
 
 		ret = new JSONObject();
-		ret.put("version", "1.0");
+		ret.put("version", VERSION);
 		ret.put("responses", responses);
 		return ret;
 	}
@@ -128,14 +117,19 @@ public class DNSLookingGlass {
 	}
 
 	public void executeQueries(DNSQueryTransportHandler [] qths) throws IOException {
-		int i;
 		DNSQueryTransportManager qtm = new DNSQueryTransportManager();
 		qtm.query(qths);
-		for (i = 0; i < qths.length; i++) {
+		for (int i = 0; i < qths.length; i++) {
 			qths[i].finalize();
 		}
 	}
 
+	/**
+	 * Runs a loop of reading from the server socket, running the query, and
+	 * sending back the response.
+	 *
+	 * @param ws - the WebSocket that is being interacted with
+	 */
 	protected void interact(WebSocketClient ws) throws IOException {
 		byte [] input;
 		while ((input = ws.read()).length > 0) {
@@ -144,15 +138,14 @@ public class DNSLookingGlass {
 	}
 
 	public String run(String json) {
-		JSONObject ret;
 		try {
 			DNSQueryTransportHandler [] qths = getDNSQueryTransportHandlers(new JSONObject(json));
 			executeQueries(qths);
 			return getEncodedResponses(qths).toString();
 		} catch (Exception ex) {
-			ret = new JSONObject();
+			JSONObject ret = new JSONObject();
 			try {
-				ret.put("version", "1.0");
+				ret.put("version", VERSION);
 				ret.put("error", getErrorTrace(ex));
 			} catch (JSONException e) {
 				e.printStackTrace();

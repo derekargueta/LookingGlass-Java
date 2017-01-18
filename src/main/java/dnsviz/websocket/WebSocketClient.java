@@ -259,6 +259,7 @@ public class WebSocketClient {
 		if (totalLength > 0x7fffffff) {
 			throw new IOException("Total message size too big for array");
 		}
+		
 		message = new byte[(int)totalLength];
 		Iterator<byte []> iterator = frames.iterator();
 		while (iterator.hasNext()) {
