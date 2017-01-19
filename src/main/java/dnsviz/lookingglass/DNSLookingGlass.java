@@ -130,7 +130,7 @@ public class DNSLookingGlass {
 	 *
 	 * @param ws - the WebSocket that is being interacted with
 	 */
-	protected void interact(WebSocketClient ws) throws IOException {
+	public void interact(WebSocketClient ws) throws IOException {
 		byte [] input;
 		while ((input = ws.read()).length > 0) {
 			ws.write(run(new String(input)).getBytes());
