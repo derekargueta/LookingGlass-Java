@@ -36,9 +36,11 @@ import java.util.Iterator;
 import java.util.PriorityQueue;
 import java.util.Set;
 
+/**
+ * The TransportManager works on an array of TransportHandlers, managing the
+ * execution of each and performing proper error-checking and cleanup.
+ */
 public class DNSQueryTransportManager {
-	public void DNSQueryTransportManager() {
-	}
 
 	private void prepareAndQueue(DNSQueryTransportHandler qh, PriorityQueue<DNSQueryTransportHandler> q, Selector selector) throws IOException {
 		qh.prepare();
@@ -50,8 +52,7 @@ public class DNSQueryTransportManager {
 		}
 	}
 
-	public void query(DNSQueryTransportHandler [] queryHandlers) throws IOException {
-		int i;
+	public void query(DNSQueryTransportHandler[] queryHandlers) throws IOException {
 		int timeout;
 		DNSQueryTransportHandler qh = null;
 		DNSQueryTransportHandler standbyQH = null;
@@ -60,7 +61,7 @@ public class DNSQueryTransportManager {
 		PriorityQueue<DNSQueryTransportHandler> activeQueue = new PriorityQueue<DNSQueryTransportHandler>(queryHandlers.length, cmp);
 
 		Selector selector = Selector.open();
-		for (i = 0; i < queryHandlers.length; i++) {
+		for (int i = 0; i < queryHandlers.length; i++) {
 			qh = queryHandlers[i];
 			try {
 				prepareAndQueue(qh, activeQueue, selector);

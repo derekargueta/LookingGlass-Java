@@ -23,8 +23,13 @@ package dnsviz.transport;
 
 import java.util.Comparator;
 
+/**
+ * Enables DNSQueryTransportHandler classes to be sorted for use in sorted data
+ * structures.
+ */
 public class DNSQueryTransportHandlerComparator implements Comparator<DNSQueryTransportHandler> {
-	public int compare(DNSQueryTransportHandler o1, DNSQueryTransportHandler o2) {
+	
+  public int compare(DNSQueryTransportHandler o1, DNSQueryTransportHandler o2) {
 		return (int)(o1.getExpiration() - o2.getExpiration());
 	}
 }

@@ -23,4 +23,11 @@ package dnsviz.lookingglass;
 
 public class Constants {
   public static final String VERSION = "1.0";
+
+  // Error messages
+  public static final String VERSION_ERROR_MSG = "Version of JSON input is invalid";
+
+  // Dictionary keys (primarily for JSON)
+  public static final String kVersion = "version";
+  public static final String kSource = "src";
 }

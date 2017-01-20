@@ -33,7 +33,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 
 public class DNSQueryTransportHandlerUDP extends DNSQueryTransportHandler {
-	public DNSQueryTransportHandlerUDP(byte [] req, InetAddress dst, int dport, InetAddress src, int sport, long timeout) {
+	public DNSQueryTransportHandlerUDP(byte[] req, InetAddress dst, int dport, InetAddress src, int sport, long timeout) {
 		super(req, dst, dport, src, sport, timeout);
 	}
 
@@ -63,12 +63,6 @@ public class DNSQueryTransportHandlerUDP extends DNSQueryTransportHandler {
 	}
 
 	protected void connect() throws IOException {
-		class connectAction implements PrivilegedExceptionAction<Object> {
-			public Object run() throws IOException {
-				((DatagramChannel)channel).connect(new InetSocketAddress(dst, dport));
-				return null;
-			}
-		}
 		connectAction a = new connectAction();
 		try {
 			AccessController.doPrivileged(a);
@@ -89,16 +83,6 @@ public class DNSQueryTransportHandlerUDP extends DNSQueryTransportHandler {
 	public boolean doRead() throws IOException {
 		int bytesRead;
 
-		class readAction implements PrivilegedExceptionAction<Object> {
-			private int bytesRead;
-			public Object run() throws IOException {
-				bytesRead = ((ReadableByteChannel)channel).read(res);
-				return null;
-			}
-			public int getBytesRead() {
-				return bytesRead;
-			}
-		}
 		readAction a = new readAction();
 		try {
 			AccessController.doPrivileged(a);
@@ -129,6 +113,24 @@ public class DNSQueryTransportHandlerUDP extends DNSQueryTransportHandler {
 	protected void checkSource() {
 		if (src != null && src.isAnyLocalAddress()) {
 			src = null;
+		}
+	}
+
+	private class connectAction implements PrivilegedExceptionAction<Object> {
+		public Object run() throws IOException {
+			((DatagramChannel)channel).connect(new InetSocketAddress(dst, dport));
+			return null;
+		}
+	}
+
+	private class readAction implements PrivilegedExceptionAction<Object> {
+		private int bytesRead;
+		public Object run() throws IOException {
+			bytesRead = ((ReadableByteChannel)channel).read(res);
+			return null;
+		}
+		public int getBytesRead() {
+			return bytesRead;
 		}
 	}
 }

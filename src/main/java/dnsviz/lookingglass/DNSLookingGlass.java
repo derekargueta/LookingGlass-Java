@@ -49,16 +49,16 @@ public class DNSLookingGlass {
 		DNSQueryTransportHandler [] ret;
 		JSONObject reqObj;
 
-		Version version = new Version(obj.getDouble("version"));
+		Version version = new Version(obj.getDouble(kVersion));
 		if (!version.isValid()) {
-			throw new JSONException("Version of JSON input is invalid");
+			throw new JSONException(VERSION_ERROR_MSG);
 		}
 
 		JSONArray requests = obj.getJSONArray("requests");
 		ret = new DNSQueryTransportHandler [requests.length()];
 		for (int i = 0; i < requests.length(); i++) {
 			reqObj = requests.getJSONObject(i);
-			String src = reqObj.has("src") ? reqObj.getString("src") : null;
+			String src = reqObj.has(kSource) ? reqObj.getString(kSource) : null;
 			int sport = reqObj.has("sport") ? reqObj.getInt("sport") : 0;
 			ret[i] = getDNSQueryTransportHandler(reqObj.getString("req"), reqObj.getString("dst"), reqObj.getInt("dport"), src, sport, reqObj.getLong("timeout"), reqObj.getBoolean("tcp"));
 		}
@@ -79,9 +79,9 @@ public class DNSLookingGlass {
 				}
 			}
 			if (qths[i].getSource() != null) {
-				response.put("src", qths[i].getSource().getHostAddress());
+				response.put(kSource, qths[i].getSource().getHostAddress());
 			} else {
-				response.put("src", (String)null);
+				response.put(kSource, (String)null);
 			}
 			if (qths[i].getSPort() != 0) {
 				response.put("sport", qths[i].getSPort());
@@ -93,14 +93,14 @@ public class DNSLookingGlass {
 		}
 
 		ret = new JSONObject();
-		ret.put("version", VERSION);
+		ret.put(kVersion, VERSION);
 		ret.put("responses", responses);
 		return ret;
 	}
 
 	public DNSQueryTransportHandler getDNSQueryTransportHandler(String req, String dst, int dport, String src, int sport, long timeout, boolean tcp) throws UnknownHostException {
 		Base64Decoder d = new Base64Decoder();
-		byte [] byteReq = d.decode(req.getBytes());
+		byte[] byteReq = d.decode(req.getBytes());
 		InetAddress srcAddr = null;
 		InetAddress dstAddr = null;
 		if (dst != null) {
@@ -116,7 +116,7 @@ public class DNSLookingGlass {
 		}
 	}
 
-	public void executeQueries(DNSQueryTransportHandler [] qths) throws IOException {
+	public void executeQueries(DNSQueryTransportHandler[] qths) throws IOException {
 		DNSQueryTransportManager qtm = new DNSQueryTransportManager();
 		qtm.query(qths);
 		for (int i = 0; i < qths.length; i++) {
@@ -145,7 +145,7 @@ public class DNSLookingGlass {
 		} catch (Exception ex) {
 			JSONObject ret = new JSONObject();
 			try {
-				ret.put("version", VERSION);
+				ret.put(kVersion, VERSION);
 				ret.put("error", getErrorTrace(ex));
 			} catch (JSONException e) {
 				e.printStackTrace();

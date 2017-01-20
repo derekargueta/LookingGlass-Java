@@ -36,6 +36,7 @@ import java.util.Random;
 import dnsviz.util.Base64Encoder;
 
 public class WebSocketClient {
+
 	final static protected String WEBSOCKET_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 	final static protected int WEBSOCKET_VERSION = 13;
 
@@ -49,32 +50,45 @@ public class WebSocketClient {
 
 		buffer = ByteBuffer.allocate(8192);
 
-		String clientKey = keyForClient();
-		String serverKey = keyForServer(clientKey);
+		final String clientKey = keyForClient();
+		final String serverKey = keyForServer(clientKey);
 		sendRequestHeaders(path, host, origin, clientKey);
 		getResponseHeaders(serverKey);
 	}
 
+	/**
+	 * Closes the IO connection
+	 */
 	public void close() throws IOException {
 		channel.close();
 	}
 
+	/**
+	 * Computes a unique key for the server via hashing.
+	 *
+	 * @return a unique string that identifies a client, for use by the server
+	 */
 	protected String keyForServer(String clientKey) {
 		try {
 			MessageDigest md = MessageDigest.getInstance("SHA");
-			byte [] b = md.digest((clientKey + WEBSOCKET_GUID).getBytes());
+			byte[] b = md.digest((clientKey + WEBSOCKET_GUID).getBytes());
 			return new String(new Base64Encoder().encode(b));
 		} catch (NoSuchAlgorithmException ex) {
 			return "";
 		}
 	}
 
+	/**
+	 * Computes a unique random string which is sent to the client.
+	 *
+	 * @return a random string
+	 */
 	protected String keyForClient() {
 		BigInteger n = new BigInteger(64, new Random());
 		return new String(new Base64Encoder().encode(n.toByteArray()));
 	}
 
-	protected void sendRequestHeaders(String path, String host, String origin, String clientKey) throws IOException {
+	private void sendRequestHeaders(String path, String host, String origin, String clientKey) throws IOException {
 		String headers = "GET " + path + " HTTP/1.1\r\n" +
 			"Host: " + host + "\r\n" +
 			"Upgrade: websocket\r\n" +
@@ -90,16 +104,15 @@ public class WebSocketClient {
 
 	protected void getResponseHeaders(String serverKey) throws IOException {
 		String headers = "";
-		String [] headerLines;
-		ByteBuffer buf;
-		byte [] bytes;
+		String[] headerLines;
+		byte[] bytes;
 		int endOfHeadersIndex = -1;
 		int endOfName = -1;
 		boolean upgradeFound = false;
 		boolean connectionFound = false;
 		boolean acceptFound = false;
 
-		buf = ByteBuffer.allocate(2048);
+		ByteBuffer buf = ByteBuffer.allocate(2048);
 
 		while (true) {
 			channel.read(buf);
@@ -157,7 +170,7 @@ public class WebSocketClient {
 		}
 	}
 
-	public byte [] read() throws IOException {
+	public byte[] read() throws IOException {
 		ByteBuffer buf = ByteBuffer.allocate(2048);
 
 		int byte0;
@@ -166,9 +179,9 @@ public class WebSocketClient {
 		int headerLen;
 		long frameLen = -1;
 		boolean hasMore = true;
-		LinkedList<byte []> frames = new LinkedList<byte []>();
-		byte [] frame;
-		byte [] message;
+		LinkedList<byte[]> frames = new LinkedList<>();
+		byte[] frame;
+		byte[] message;
 		long totalLength = 0;
 		int index = 0;
 
@@ -196,13 +209,13 @@ public class WebSocketClient {
 			// check whether FIN flag is set or not
 			hasMore = (byte0 & 0x80) == 0;
 
-			// determine the header length
+			// determine length of header
 			if (byte1b <= 125) {
-					headerLen = 2;
+				headerLen = 2;
 			} else if (byte1b == 126) {
-					headerLen = 4;
+				headerLen = 4;
 			} else { // byte1b == 127:
-					headerLen = 10;
+				headerLen = 10;
 			}
 
 			while (buf.position() < headerLen) {
@@ -261,7 +274,7 @@ public class WebSocketClient {
 		}
 		
 		message = new byte[(int)totalLength];
-		Iterator<byte []> iterator = frames.iterator();
+		Iterator<byte[]> iterator = frames.iterator();
 		while (iterator.hasNext()) {
 			frame = iterator.next();
 			System.arraycopy(frame, 0, message, index, frame.length);
@@ -270,10 +283,10 @@ public class WebSocketClient {
 		return message;
 	}
 
-	public void write(byte [] data) throws IOException {
+	public void write(byte[] data) throws IOException {
 		ByteBuffer buf = null;
 		int headerLen;
-		byte [] mask;
+		byte[] mask;
 
 		if (data.length <= 125) {
 			headerLen = 6;
@@ -303,7 +316,7 @@ public class WebSocketClient {
 			buf.put((byte)(data.length & 0xff));
 		}
 
-		mask = new byte [4];
+		mask = new byte[4];
 		BigInteger n = new BigInteger(32, new Random());
 		System.arraycopy(n.toByteArray(), 0, mask, 0, 4);
 		buf.put(mask);

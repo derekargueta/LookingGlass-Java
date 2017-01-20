@@ -36,7 +36,7 @@ import java.security.PrivilegedExceptionAction;
 public class DNSQueryTransportHandlerTCP extends DNSQueryTransportHandler {
 	protected boolean lengthKnown = false;
 
-	public DNSQueryTransportHandlerTCP(byte [] req, InetAddress dst, int dport, InetAddress src, int sport, long timeout) {
+	public DNSQueryTransportHandlerTCP(byte[] req, InetAddress dst, int dport, InetAddress src, int sport, long timeout) {
 		super(req, dst, dport, src, sport, timeout);
 	}
 
@@ -49,9 +49,8 @@ public class DNSQueryTransportHandlerTCP extends DNSQueryTransportHandler {
 	}
 
 	protected void initRequestBuffer(byte [] req) {
-		byte b1, b2;
-		b1 = (byte)((req.length >> 8) & 0xff);
-		b2 = (byte)(req.length & 0xff);
+		byte b1 = (byte)((req.length >> 8) & 0xff);
+		byte b2 = (byte)(req.length & 0xff);
 		this.req = ByteBuffer.allocate(req.length + 2);
 		this.req.clear();
 		this.req.put(b1);
@@ -65,12 +64,6 @@ public class DNSQueryTransportHandlerTCP extends DNSQueryTransportHandler {
 	}
 
 	protected void connect() throws IOException {
-		class connectAction implements PrivilegedExceptionAction<Object> {
-			public Object run() throws IOException {
-				((SocketChannel)channel).connect(new InetSocketAddress(dst, dport));
-				return null;
-			}
-		}
 		connectAction a = new connectAction();
 		try {
 			AccessController.doPrivileged(a);
@@ -96,20 +89,8 @@ public class DNSQueryTransportHandlerTCP extends DNSQueryTransportHandler {
 
 	public boolean doRead() throws IOException {
 		int bytesRead;
-		int len;
-		byte b1, b2;
 		ByteBuffer buf;
 
-		class readAction implements PrivilegedExceptionAction<Object> {
-			private int bytesRead;
-			public Object run() throws IOException {
-				bytesRead = ((ReadableByteChannel)channel).read(res);
-				return null;
-			}
-			public int getBytesRead() {
-				return bytesRead;
-			}
-		}
 		readAction a = new readAction();
 		try {
 			AccessController.doPrivileged(a);
@@ -133,9 +114,9 @@ public class DNSQueryTransportHandlerTCP extends DNSQueryTransportHandler {
 
 		if (!lengthKnown && res.position() > 1) {
 			res.limit(res.position());
-			b1 = res.get(0);
-			b2 = res.get(1);
-			len = ((b1 & 0xff) << 8) | (b2 & 0xff);
+			byte b1 = res.get(0);
+			byte b2 = res.get(1);
+			int len = ((b1 & 0xff) << 8) | (b2 & 0xff);
 			buf = ByteBuffer.allocate(len);
 			buf.clear();
 			res.rewind().position(2);
@@ -181,6 +162,24 @@ public class DNSQueryTransportHandlerTCP extends DNSQueryTransportHandler {
 	protected void checkSource() {
 		if (src == null || src.isAnyLocalAddress()) {
 			src = getLocalAddress();
+		}
+	}
+
+	private class connectAction implements PrivilegedExceptionAction<Object> {
+		public Object run() throws IOException {
+			((SocketChannel)channel).connect(new InetSocketAddress(dst, dport));
+			return null;
+		}
+	}
+
+	private class readAction implements PrivilegedExceptionAction<Object> {
+		private int bytesRead;
+		public Object run() throws IOException {
+			bytesRead = ((ReadableByteChannel)channel).read(res);
+			return null;
+		}
+		public int getBytesRead() {
+			return bytesRead;
 		}
 	}
 }

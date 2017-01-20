@@ -340,13 +340,12 @@ public abstract class DNSQueryTransportHandler {
 
 	public String getEncodedResponse() {
 		String res;
-		byte [] buf;
-		Base64Encoder e = new Base64Encoder();
+		Base64Encoder encoder = new Base64Encoder();
 
 		if (this.res != null) {
-			buf = new byte [this.res.limit()];
+			byte[] buf = new byte[this.res.limit()];
 			this.res.get(buf);
-			return new String(e.encode(buf));
+			return new String(encoder.encode(buf));
 		} else {
 			return null;
 		}
