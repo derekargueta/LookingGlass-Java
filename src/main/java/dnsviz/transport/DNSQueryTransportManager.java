@@ -28,9 +28,6 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 import java.nio.channels.SelectionKey;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.PriorityQueue;
@@ -57,8 +54,8 @@ public class DNSQueryTransportManager {
 		DNSQueryTransportHandler qh = null;
 		DNSQueryTransportHandler standbyQH = null;
 		DNSQueryTransportHandlerComparator cmp = new DNSQueryTransportHandlerComparator();
-		PriorityQueue<DNSQueryTransportHandler> standbyQueue = new PriorityQueue<DNSQueryTransportHandler>(queryHandlers.length, cmp);
-		PriorityQueue<DNSQueryTransportHandler> activeQueue = new PriorityQueue<DNSQueryTransportHandler>(queryHandlers.length, cmp);
+		PriorityQueue<DNSQueryTransportHandler> standbyQueue = new PriorityQueue<>(queryHandlers.length, cmp);
+		PriorityQueue<DNSQueryTransportHandler> activeQueue = new PriorityQueue<>(queryHandlers.length, cmp);
 
 		Selector selector = Selector.open();
 		for (int i = 0; i < queryHandlers.length; i++) {
@@ -77,8 +74,7 @@ public class DNSQueryTransportManager {
 		}
 
 		while (activeQueue.peek() != null) {
-			Date d = new Date();
-			long currTime = d.getTime();
+			long currTime = new Date().getTime();
 
 			// remove expired entries
 			while (((qh = activeQueue.peek()) != null) && currTime >= qh.getExpiration()) {

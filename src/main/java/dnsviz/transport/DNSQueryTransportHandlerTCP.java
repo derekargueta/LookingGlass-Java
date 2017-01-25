@@ -29,9 +29,6 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 public class DNSQueryTransportHandlerTCP extends DNSQueryTransportHandler {
 	protected boolean lengthKnown = false;
@@ -48,7 +45,7 @@ public class DNSQueryTransportHandlerTCP extends DNSQueryTransportHandler {
 		return 2;
 	}
 
-	protected void initRequestBuffer(byte [] req) {
+	protected void initRequestBuffer(byte[] req) {
 		byte b1 = (byte)((req.length >> 8) & 0xff);
 		byte b2 = (byte)(req.length & 0xff);
 		this.req = ByteBuffer.allocate(req.length + 2);
@@ -64,16 +61,10 @@ public class DNSQueryTransportHandlerTCP extends DNSQueryTransportHandler {
 	}
 
 	protected void connect() throws IOException {
-		connectAction a = new connectAction();
 		try {
-			AccessController.doPrivileged(a);
-		} catch (PrivilegedActionException pae) {
-			Exception ex = pae.getException();
-			if (ex instanceof IOException) {
-				throw (IOException)ex;
-			} else {
-				throw (RuntimeException)ex;
-			}
+			((SocketChannel)channel).connect(new InetSocketAddress(dst, dport));
+		} catch (IOException | RuntimeException e) {
+			throw e;
 		}
 	}
 
@@ -91,19 +82,14 @@ public class DNSQueryTransportHandlerTCP extends DNSQueryTransportHandler {
 		int bytesRead;
 		ByteBuffer buf;
 
-		readAction a = new readAction();
 		try {
-			AccessController.doPrivileged(a);
-			bytesRead = a.getBytesRead();
-		} catch (PrivilegedActionException pae) {
-			Exception ex = pae.getException();
-			if (ex instanceof IOException) {
-				setError((IOException)ex);
-				cleanup();
-				return true;
-			} else {
-				throw (RuntimeException)ex;
-			}
+			bytesRead = ((ReadableByteChannel)channel).read(res);
+		} catch (IOException e) {
+			setError(e);
+			cleanup();
+			return true;
+		} catch (RuntimeException e) {
+			throw e;
 		}
 
 		if (bytesRead < 1) {
@@ -132,54 +118,30 @@ public class DNSQueryTransportHandlerTCP extends DNSQueryTransportHandler {
 	}
 
 	protected InetAddress getLocalAddress() {
-		InetAddress ret;
+		InetAddress localAddress;
 		try {
-			final DatagramChannel c = DatagramChannel.open();
-			class getAddrAction implements PrivilegedExceptionAction<InetSocketAddress> {
-				public InetSocketAddress run() throws IOException {
-					c.connect(new InetSocketAddress(dst, dport));
-					return (InetSocketAddress)c.getLocalAddress();
-				}
-			}
-			getAddrAction a = new getAddrAction();
+			final DatagramChannel datagramChannel = DatagramChannel.open();
 			try {
-				ret = AccessController.doPrivileged(a).getAddress();
-			} catch (PrivilegedActionException pae) {
-				Exception ex = pae.getException();
-				if (ex instanceof IOException) {
-					throw (IOException)ex;
-				} else {
-					throw (RuntimeException)ex;
-				}
+				datagramChannel.connect(new InetSocketAddress(dst, dport));
+				localAddress = ((InetSocketAddress)datagramChannel.getLocalAddress()).getAddress();
+			} catch (IOException | RuntimeException e) {
+				throw e;
 			}
-			c.close();
-			return ret;
+			datagramChannel.close();
+			return localAddress;
 		} catch (IOException ex) {
+			ex.printStackTrace();
 			return null;
 		}
 	}
 
+	/**
+	 * Ensures that `src` has an address by populating it with
+	 * `getLocalAddress()` if `src` doesn't have a valid address.
+	 */
 	protected void checkSource() {
 		if (src == null || src.isAnyLocalAddress()) {
 			src = getLocalAddress();
-		}
-	}
-
-	private class connectAction implements PrivilegedExceptionAction<Object> {
-		public Object run() throws IOException {
-			((SocketChannel)channel).connect(new InetSocketAddress(dst, dport));
-			return null;
-		}
-	}
-
-	private class readAction implements PrivilegedExceptionAction<Object> {
-		private int bytesRead;
-		public Object run() throws IOException {
-			bytesRead = ((ReadableByteChannel)channel).read(res);
-			return null;
-		}
-		public int getBytesRead() {
-			return bytesRead;
 		}
 	}
 }

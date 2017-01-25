@@ -22,6 +22,7 @@
 package dnsviz.transport;
 
 import java.io.IOException;
+import java.lang.Void;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -30,17 +31,13 @@ import java.net.PortUnreachableException;
 import java.net.BindException;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.NetworkChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 import java.util.Date;
 import java.util.Random;
-
-import java.net.UnknownHostException;
 
 import dnsviz.util.Base64Encoder;
 import dnsviz.util.Base64Decoder;
@@ -65,7 +62,7 @@ public abstract class DNSQueryTransportHandler {
 	protected long startTime = 0;
 	protected long endTime = 0;
 
-	protected DNSQueryTransportHandler(byte [] req, InetAddress dst, int dport, InetAddress src, int sport, long timeout) {
+	protected DNSQueryTransportHandler(byte[] req, InetAddress dst, int dport, InetAddress src, int sport, long timeout) {
 		this.dst = dst;
 		this.dport = dport;
 		this.src = src;
@@ -157,7 +154,7 @@ public abstract class DNSQueryTransportHandler {
 		return src;
 	}
 
-	protected abstract void initRequestBuffer(byte [] req);
+	protected abstract void initRequestBuffer(byte[] req);
 
 	protected void initResponseBuffer() {
 		//TODO start more conservative and dynamically grow if more buffer space is
@@ -172,50 +169,26 @@ public abstract class DNSQueryTransportHandler {
 	}
 
 	protected void bindSocket() throws IOException {
-		class bindAction implements PrivilegedExceptionAction<Object> {
-			private int port = 0;
-			public Object run() throws IOException {
-				channel.bind(new InetSocketAddress(src, port));
-				return null;
-			}
-			public void setPort(int port) {
-				this.port = port;
-			}
-		}
-		bindAction action = new bindAction();
 		if (sport > 0) {
-			action.setPort(sport);
 			try {
-				AccessController.doPrivileged(action);
-			} catch (PrivilegedActionException pae) {
-				Exception ex = pae.getException();
-				if (ex instanceof IOException) {
-					throw (IOException)ex;
-				} else {
-					throw (RuntimeException)ex;
-				}
+				channel.bind(new InetSocketAddress(src, sport));
+			} catch (IOException | RuntimeException e) {
+				throw e;
 			}
 		} else {
-			Random random = new Random();
 
 			int i = 0;
 			while (true) {
-				// 65536 - 1024 = 64512
-				action.setPort(random.nextInt(64512) + 1024);
+				int randomPort = new Random().nextInt(64512) + 1024;
 				try {
-					AccessController.doPrivileged(action);
+					channel.bind(new InetSocketAddress(src, randomPort));
 					break;
-				} catch (PrivilegedActionException pae) {
-					Exception ex = pae.getException();
-					if (ex instanceof BindException) {
-						if (++i > MAX_PORT_BIND_ATTEMPTS || !ex.getMessage().contains("ddress already in use")) {
-							throw (BindException)ex;
-						}
-					} else if (ex instanceof IOException) {
-						throw (IOException)ex;
-					} else {
-						throw (RuntimeException)ex;
+				} catch (BindException e) {
+					if (++i > MAX_PORT_BIND_ATTEMPTS || !e.getMessage().contains("ddress already in use")) {
+						throw e;
 					}
+				} catch (IOException | RuntimeException e) {
+					throw e;
 				}
 			}
 		}
@@ -236,23 +209,15 @@ public abstract class DNSQueryTransportHandler {
 	}
 
 	protected void setSocketInfo() {
-		InetSocketAddress addr;
+		InetSocketAddress addr;			// IP socket address
 
-		class getAddrAction implements PrivilegedExceptionAction<InetSocketAddress> {
-			public InetSocketAddress run() throws IOException {
-				return (InetSocketAddress)channel.getLocalAddress();
-			}
-		}
-		getAddrAction action = new getAddrAction();
 		try {
-			addr = AccessController.doPrivileged(action);
-		} catch (PrivilegedActionException pae) {
-			Exception ex = pae.getException();
-			if (ex instanceof IOException) {
-				return;
-			} else {
-				throw (RuntimeException)ex;
-			}
+			addr = (InetSocketAddress)channel.getLocalAddress();
+		} catch (IOException e) {
+			e.printStackTrace();
+			return;
+		} catch (RuntimeException e) {
+			throw e;
 		}
 		src = addr.getAddress();
 		sport = addr.getPort();
@@ -269,24 +234,14 @@ public abstract class DNSQueryTransportHandler {
 	protected abstract boolean finishConnect() throws IOException;
 
 	public boolean doWrite() throws IOException {
-		class writeAction implements PrivilegedExceptionAction<Object> {
-			public Object run() throws IOException {
-				((WritableByteChannel)channel).write(req);
-				return null;
-			}
-		}
-		writeAction action = new writeAction();
 		try {
-			AccessController.doPrivileged(action);
-		} catch (PrivilegedActionException pae) {
-			Exception ex = pae.getException();
-			if (ex instanceof IOException) {
-				setError((IOException)ex);
-				cleanup();
-				return true;
-			} else {
-				throw (RuntimeException)ex;
-			}
+			((WritableByteChannel)channel).write(req);
+		} catch (IOException e) {
+			setError((IOException)e);
+			cleanup();
+			return true;
+		} catch (RuntimeException e) {
+			throw e;
 		}
 		if (!req.hasRemaining()) {
 			return true;
@@ -303,18 +258,23 @@ public abstract class DNSQueryTransportHandler {
 
 	protected void setEnd() {
 		// set end (and start, if necessary) times, as appropriate
-		Date d = new Date();
-		endTime = d.getTime();
+		endTime = new Date().getTime();
 		if (startTime == 0) {
 			startTime = endTime;
 		}
 	}
 
+	/** 
+	 * Closes the socket connection. Doesn't attempt anything if the socket isn't
+	 * open.
+	 */
 	protected void closeSocket() {
-		try {
-			channel.close();
-		}	catch (IOException ex) {
-			/* do nothing here */
+		if (channel.isOpen()) {
+			try {
+				channel.close();
+			}	catch (IOException ex) {
+				ex.printStackTrace();
+			}
 		}
 	}
 
@@ -338,8 +298,10 @@ public abstract class DNSQueryTransportHandler {
 		}
 	}
 
+	/**
+	 * @return a Base64 version of the `res` ByteBuffer
+	 */
 	public String getEncodedResponse() {
-		String res;
 		Base64Encoder encoder = new Base64Encoder();
 
 		if (this.res != null) {

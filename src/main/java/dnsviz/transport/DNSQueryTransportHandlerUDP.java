@@ -28,9 +28,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
-import java.security.AccessController;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedExceptionAction;
 
 public class DNSQueryTransportHandlerUDP extends DNSQueryTransportHandler {
 	public DNSQueryTransportHandlerUDP(byte[] req, InetAddress dst, int dport, InetAddress src, int sport, long timeout) {
@@ -45,7 +42,7 @@ public class DNSQueryTransportHandlerUDP extends DNSQueryTransportHandler {
 		return 0;
 	}
 
-	protected void initRequestBuffer(byte [] req) {
+	protected void initRequestBuffer(byte[] req) {
 		this.req = ByteBuffer.allocate(req.length);
 		this.req.clear();
 		this.req.put(req);
@@ -53,9 +50,9 @@ public class DNSQueryTransportHandlerUDP extends DNSQueryTransportHandler {
 	}
 
 	protected void initResponseBuffer() {
-			//TODO start more conservative and dynamically grow if more buffer space is
-			//needed
-			res = ByteBuffer.allocate(65536);
+		//TODO start more conservative and dynamically grow if more buffer space is
+		//needed
+		res = ByteBuffer.allocate(65536);
 	}
 
 	protected void createSocket() throws IOException {
@@ -63,16 +60,10 @@ public class DNSQueryTransportHandlerUDP extends DNSQueryTransportHandler {
 	}
 
 	protected void connect() throws IOException {
-		connectAction a = new connectAction();
 		try {
-			AccessController.doPrivileged(a);
-		} catch (PrivilegedActionException pae) {
-			Exception ex = pae.getException();
-			if (ex instanceof IOException) {
-				throw (IOException)ex;
-			} else {
-				throw (RuntimeException)ex;
-			}
+			((DatagramChannel)channel).connect(new InetSocketAddress(dst, dport));
+		} catch (IOException | RuntimeException e) {
+			throw e;
 		}
 	}
 
@@ -82,20 +73,14 @@ public class DNSQueryTransportHandlerUDP extends DNSQueryTransportHandler {
 
 	public boolean doRead() throws IOException {
 		int bytesRead;
-
-		readAction a = new readAction();
 		try {
-			AccessController.doPrivileged(a);
-			bytesRead = a.getBytesRead();
-		} catch (PrivilegedActionException pae) {
-			Exception ex = pae.getException();
-			if (ex instanceof IOException) {
-				setError((IOException)ex);
-				cleanup();
-				return true;
-			} else {
-				throw (RuntimeException)ex;
-			}
+			bytesRead = ((ReadableByteChannel)channel).read(res);
+		} catch (IOException e) {
+			setError(e);
+			cleanup();
+			return true;
+		} catch (RuntimeException e) {
+			throw e;
 		}
 
 		if (bytesRead < 1) {
@@ -113,24 +98,6 @@ public class DNSQueryTransportHandlerUDP extends DNSQueryTransportHandler {
 	protected void checkSource() {
 		if (src != null && src.isAnyLocalAddress()) {
 			src = null;
-		}
-	}
-
-	private class connectAction implements PrivilegedExceptionAction<Object> {
-		public Object run() throws IOException {
-			((DatagramChannel)channel).connect(new InetSocketAddress(dst, dport));
-			return null;
-		}
-	}
-
-	private class readAction implements PrivilegedExceptionAction<Object> {
-		private int bytesRead;
-		public Object run() throws IOException {
-			bytesRead = ((ReadableByteChannel)channel).read(res);
-			return null;
-		}
-		public int getBytesRead() {
-			return bytesRead;
 		}
 	}
 }

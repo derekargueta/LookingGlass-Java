@@ -23,17 +23,15 @@ package dnsviz.util;
 
 import dnsviz.util.Base64;
 
+/**
+ * Decodes Base64-Encoded strings into plaintext
+ */
 public class Base64Decoder {
-	public byte [] decode(byte [] msg) {
-		int msgBits;
-		int i;
-		byte [] ret;
-		int bitIndex;
-		int index;
-		int offset;
-		byte val;
 
-		msgBits = msg.length * 6;
+	public byte [] decode(byte[] msg) {
+		int i;
+
+		int msgBits = msg.length * 6;
 		if (msg[msg.length - 1] == Base64.pad) {
 			msgBits -= 6;
 		}
@@ -42,16 +40,16 @@ public class Base64Decoder {
 		}
 		msgBits -= (msgBits % 8);
 
-		ret = new byte [msgBits >> 3];
+		byte[] ret = new byte[msgBits >> 3];
 		for (i = 0; i < ret.length; i++) {
 			ret[i] = 0;
 		}
 		for (i = 0; i < msg.length; i++) {
 			assert(Base64.isValid(msg[i]));
-			val = Base64.values[msg[i]];
-			bitIndex = i * 6;
-			index = bitIndex / 8;
-			offset = bitIndex % 8;
+			byte val = Base64.values[msg[i]];
+			int bitIndex = i * 6;
+			int index = bitIndex / 8;
+			int offset = bitIndex % 8;
 			if (index >= ret.length) {
 				break;
 			} else {
